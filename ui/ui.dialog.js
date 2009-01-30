@@ -55,16 +55,16 @@ $.widget("ui.dialog", {
 				})
 				// setting tabIndex makes the div focusable
 				// setting outline to 0 prevents a border on focus in Mozilla
-				.attr('tabIndex', -1).css('outline', 0).keydown(function(ev) {
-					(options.closeOnEscape && ev.keyCode
-						&& ev.keyCode == $.ui.keyCode.ESCAPE && self.close());
+				.attr('tabIndex', -1).css('outline', 0).keydown(function(event) {
+					(options.closeOnEscape && event.keyCode
+						&& event.keyCode == $.ui.keyCode.ESCAPE && self.close(event));
 				})
 				.attr({
 					role: 'dialog',
 					'aria-labelledby': titleId
 				})
-				.mousedown(function() {
-					self.moveToTop();
+				.mousedown(function(event) {
+					self.moveToTop(event);
 				}),
 
 			uiDialogContent = this.element
@@ -107,8 +107,8 @@ $.widget("ui.dialog", {
 				.mousedown(function(ev) {
 					ev.stopPropagation();
 				})
-				.click(function() {
-					self.close();
+				.click(function(event) {
+					self.close(event);
 					return false;
 				})
 				.appendTo(uiDialogTitlebar),
@@ -137,10 +137,12 @@ $.widget("ui.dialog", {
 
 		(options.bgiframe && $.fn.bgiframe && uiDialog.bgiframe());
 		(options.autoOpen && this.open());
+		
 	},
 
 	destroy: function() {
 		(this.overlay && this.overlay.destroy());
+		(this.shadow && this._destroyShadow());
 		this.uiDialog.hide();
 		this.element
 			.unbind('.dialog')
@@ -152,17 +154,18 @@ $.widget("ui.dialog", {
 		(this.originalTitle && this.element.attr('title', this.originalTitle));
 	},
 
-	close: function() {
-		if (false === this._trigger('beforeclose')) {
+	close: function(event) {
+		if (false === this._trigger('beforeclose', event)) {
 			return;
 		}
 
 		(this.overlay && this.overlay.destroy());
+		(this.shadow && this._destroyShadow());
 		this.uiDialog
 			.hide(this.options.hide)
 			.unbind('keypress.ui-dialog');
 
-		this._trigger('close');
+		this._trigger('close', event);
 		$.ui.dialog.overlay.resize();
 
 		this._isOpen = false;
@@ -174,11 +177,11 @@ $.widget("ui.dialog", {
 
 	// the force parameter allows us to move modal dialogs to their correct
 	// position on open
-	moveToTop: function(force) {
+	moveToTop: function(force, event) {
 
 		if ((this.options.modal && !force)
 			|| (!this.options.stack && !this.options.modal)) {
-			return this._trigger('focus');
+			return this._trigger('focus', event);
 		}
 
 		var maxZ = this.options.zIndex, options = this.options;
@@ -186,16 +189,17 @@ $.widget("ui.dialog", {
 			maxZ = Math.max(maxZ, parseInt($(this).css('z-index'), 10) || options.zIndex);
 		});
 		(this.overlay && this.overlay.$el.css('z-index', ++maxZ));
+		(this.shadow && this.shadow.css('z-index', ++maxZ));
 
 		//Save and then restore scroll since Opera 9.5+ resets when parent z-Index is changed.
 		//  http://ui.jquery.com/bugs/ticket/3193
 		var saveScroll = { scrollTop: this.element.attr('scrollTop'), scrollLeft: this.element.attr('scrollLeft') };
 		this.uiDialog.css('z-index', ++maxZ);
 		this.element.attr(saveScroll);
-		this._trigger('focus');
+		this._trigger('focus', event);
 	},
 
-	open: function() {
+	open: function(event) {
 		if (this._isOpen) { return; }
 
 		var options = this.options,
@@ -206,7 +210,7 @@ $.widget("ui.dialog", {
 		this._size();
 		this._position(options.position);
 		uiDialog.show(options.show);
-		this.moveToTop(true);
+		this.moveToTop(true, event);
 
 		// prevent tabbing out of modal dialogs
 		(options.modal && uiDialog.bind('keypress.ui-dialog', function(event) {
@@ -240,7 +244,10 @@ $.widget("ui.dialog", {
 			.filter(':first')
 			.focus();
 
-		this._trigger('open');
+		if(options.shadow)
+			this._createShadow();
+
+		this._trigger('open', event);
 		this._isOpen = true;
 	},
 
@@ -299,13 +306,17 @@ $.widget("ui.dialog", {
 			containment: 'document',
 			start: function() {
 				(options.dragStart && options.dragStart.apply(self.element[0], arguments));
+				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.hide();
 			},
 			drag: function() {
 				(options.drag && options.drag.apply(self.element[0], arguments));
+				self._refreshShadow(1);
 			},
 			stop: function() {
 				(options.dragStop && options.dragStop.apply(self.element[0], arguments));
 				$.ui.dialog.overlay.resize();
+				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.show();
+				self._refreshShadow();
 			}
 		});
 	},
@@ -328,14 +339,18 @@ $.widget("ui.dialog", {
 			minHeight: options.minHeight,
 			start: function() {
 				(options.resizeStart && options.resizeStart.apply(self.element[0], arguments));
+				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.hide();
 			},
 			resize: function() {
 				(options.resize && options.resize.apply(self.element[0], arguments));
+				self._refreshShadow(1);
 			},
 			handles: resizeHandles,
 			stop: function() {
 				(options.resizeStop && options.resizeStop.apply(self.element[0], arguments));
 				$.ui.dialog.overlay.resize();
+				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.show();
+				self._refreshShadow();
 			}
 		})
 		.find('.ui-resizable-se').addClass('ui-icon ui-icon-grip-diagonal-se');
@@ -461,12 +476,38 @@ $.widget("ui.dialog", {
 
 		this.element
 			.css({
-				minHeight: options.minHeight - nonContentHeight,
+				minHeight: Math.max(options.minHeight - nonContentHeight, 0),
 				height: options.height == 'auto'
 					? 'auto'
 					: options.height - nonContentHeight
 			});
+	},
+	
+	_createShadow: function() {
+		this.shadow = $('<div class="ui-widget-shadow"></div>').css('position', 'absolute').appendTo(document.body);
+		this._refreshShadow();
+		return this.shadow;
+	},
+	
+	_refreshShadow: function(dragging) {
+		// IE6 is simply to slow to handle the reflow in a good way, so
+		// resizing only happens on stop, and the shadow is hidden during drag/resize
+		if(dragging && $.browser.msie && $.browser.version < 7) return;
+		
+		var offset = this.uiDialog.offset();
+		this.shadow.css({
+			left: offset.left,
+			top: offset.top,
+			width: this.uiDialog.outerWidth(),
+			height: this.uiDialog.outerHeight()
+		});
+	},
+	
+	_destroyShadow: function() {
+		this.shadow.remove();
+		this.shadow = null;
 	}
+	
 });
 
 $.extend($.ui.dialog, {
@@ -482,9 +523,9 @@ $.extend($.ui.dialog, {
 		minHeight: 150,
 		minWidth: 150,
 		modal: false,
-		overlay: {},
 		position: 'center',
 		resizable: true,
+		shadow: true,
 		stack: true,
 		title: '',
 		width: 300,
@@ -539,7 +580,7 @@ $.extend($.ui.dialog.overlay, {
 			// allow closing by pressing the escape key
 			$(document).bind('keydown.dialog-overlay', function(event) {
 				(dialog.options.closeOnEscape && event.keyCode
-						&& event.keyCode == $.ui.keyCode.ESCAPE && dialog.close());
+						&& event.keyCode == $.ui.keyCode.ESCAPE && dialog.close(event));
 			});
 
 			// handle window resize
@@ -547,12 +588,10 @@ $.extend($.ui.dialog.overlay, {
 		}
 
 		var $el = $('<div></div>').appendTo(document.body)
-			.addClass('ui-dialog-overlay').css($.extend({
-				borderWidth: 0, margin: 0, padding: 0,
-				position: 'absolute', top: 0, left: 0,
+			.addClass('ui-widget-overlay').css({
 				width: this.width(),
 				height: this.height()
-			}, dialog.options.overlay));
+			});
 
 		(dialog.options.bgiframe && $.fn.bgiframe && $el.bgiframe());
 
