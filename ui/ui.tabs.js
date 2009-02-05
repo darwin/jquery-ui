@@ -15,7 +15,8 @@
 $.widget("ui.tabs", {
 
 	_init: function() {
-		// create tabs
+		if (this.options.deselectable !== undefined)
+			this.options.collapsible = this.options.deselectable;
 		this._tabify(true);
 	},
 
@@ -24,6 +25,9 @@ $.widget("ui.tabs", {
 			this.select(value);
 		else {
 			this.options[key] = value;
+			if (key == 'deselectable')
+				this.options.collapsible = value;
+			
 			this._tabify();
 		}
 	},
@@ -41,7 +45,7 @@ $.widget("ui.tabs", {
 		var cookie = this.cookie || (this.cookie = this.options.cookie.name || 'ui-tabs-' + $.data(this.list[0]));
 		return $.cookie.apply(null, [cookie].concat($.makeArray(arguments)));
 	},
-	
+
 	_ui: function(tab, panel) {
 		return {
 			tab: tab,
@@ -62,6 +66,10 @@ $.widget("ui.tabs", {
 		var fragmentId = /^#.+/; // Safari 2 reports '#' for an empty hash
 		this.$tabs.each(function(i, a) {
 			var href = $(a).attr('href');
+			
+			// For dynamically created HTML that contains a hash as href IE expands
+			// such href to the full page url with hash and then misinterprets tab as ajax...
+			if (href.split('#')[0] == location.toString().split('#')[0]) href = a.hash;
 
 			// inline tab
 			if (fragmentId.test(href))
@@ -88,7 +96,7 @@ $.widget("ui.tabs", {
 
 			// invalid tab href
 			else
-				o.disabled.push(i + 1);
+				o.disabled.push(i);
 		});
 
 		// initialization from scratch
@@ -148,7 +156,6 @@ $.widget("ui.tabs", {
 			if (o.selected >= 0 && this.$tabs.length) { // check for length avoids error when initializing empty list
 				this.$panels.eq(o.selected).removeClass('ui-tabs-hide');
 				var classes = ['ui-tabs-selected ui-state-active'];
-				if (o.deselectable) classes.push('ui-tabs-deselectable');
 				this.$lis.eq(o.selected).addClass(classes.join(' '));
 
 				// seems to be expected behavior that the show callback is fired
@@ -189,6 +196,9 @@ $.widget("ui.tabs", {
 		else
 			o.selected = this.$lis.index(this.$lis.filter('.ui-tabs-selected'));
 
+		// update collapsible
+		this.element[o.collapsible ? 'addClass' : 'removeClass']('ui-tabs-collapsible');
+		
 		// set or update cookie after init and add/remove respectively
 		if (o.cookie) this._cookie(o.selected, o.cookie);
 
@@ -220,7 +230,7 @@ $.widget("ui.tabs", {
 		var showTab = showFx ?
 			function(clicked, $show) {
 				$show.hide().removeClass('ui-tabs-hide') // avoid flicker that way
-					.animate(showFx, 500, function() {
+					.animate(showFx, showFx.duration || 'normal', function() {
 						resetStyle($show, showFx);
 						self._trigger('show', null, self._ui(clicked, $show[0]));
 					});
@@ -247,7 +257,6 @@ $.widget("ui.tabs", {
 		// Switch a tab...
 		function switchTab(clicked, $li, $hide, $show) {
 			var classes = ['ui-tabs-selected ui-state-active'];
-			if (o.deselectable) classes.push('ui-tabs-deselectable');
 			$li.removeClass('ui-state-default').addClass(classes.join(' '))
 				.siblings().removeClass(classes.join(' ')).addClass('ui-state-default');
 			hideTab(clicked, $hide, $show);
@@ -255,16 +264,15 @@ $.widget("ui.tabs", {
 
 		// attach tab event handler, unbind to avoid duplicates from former tabifying...
 		this.$tabs.unbind('.tabs').bind(o.event + '.tabs', function() {
-
 			var $li = $(this).parents('li:eq(0)'),
 				$hide = self.$panels.filter(':visible'),
 				$show = $(self._sanitizeSelector(this.hash));
 
-			// If tab is already selected and not deselectable or tab disabled or
+			// If tab is already selected and not collapsible or tab disabled or
 			// or is already loading or click callback returns false stop here.
 			// Check if click handler returns false last so that it is not executed
 			// for a disabled or loading tab!
-			if (($li.hasClass('ui-state-active') && !o.deselectable)
+			if (($li.hasClass('ui-state-active') && !o.collapsible)
 				|| $li.hasClass('ui-state-disabled')
 				|| $(this).hasClass('ui-tabs-loading')
 				|| self._trigger('select', null, self._ui(this, $show[0])) === false
@@ -276,11 +284,11 @@ $.widget("ui.tabs", {
 			o.selected = self.$tabs.index(this);
 
 			// if tab may be closed TODO avoid redundant code in this block
-			if (o.deselectable) {
+			if (o.collapsible) {
 				if ($li.hasClass('ui-state-active')) {
 					o.selected = -1;
 					if (o.cookie) self._cookie(o.selected, o.cookie);
-					$li.removeClass('ui-tabs-selected ui-state-active ui-tabs-deselectable')
+					$li.removeClass('ui-tabs-selected ui-state-active')
 						.addClass('ui-state-default');
 					self.$panels.stop();
 					hideTab(this, $hide);
@@ -291,7 +299,7 @@ $.widget("ui.tabs", {
 					self.$panels.stop();
 					var a = this;
 					self.load(self.$tabs.index(this), function() {
-						$li.addClass('ui-tabs-selected ui-state-active ui-tabs-deselectable')
+						$li.addClass('ui-tabs-selected ui-state-active')
 							.removeClass('ui-state-default');
 						showTab(a, $show);
 					});
@@ -326,20 +334,19 @@ $.widget("ui.tabs", {
 			// which can become a usability and annoying problem with tabs('rotate').
 			if ($.browser.msie) this.blur();
 
-			return false;
-
 		});
 
-		// disable click if event is configured to something else
-		if (o.event != 'click') this.$tabs.bind('click.tabs', function(){return false;});
+		// disable click in any case
+		this.$tabs.bind('click.tabs', function(){return false;});
 
 	},
-	
+
 	destroy: function() {
 		var o = this.options;
 
-		this.element
-			.removeClass('ui-tabs ui-widget ui-widget-content ui-corner-all');
+		this.element.unbind('.tabs')
+			.removeClass('ui-tabs ui-widget ui-widget-content ui-corner-all')
+			.removeData('tabs');
 
 		this.list.unbind('.tabs')
 			.removeClass('ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all')
@@ -364,7 +371,8 @@ $.widget("ui.tabs", {
 					'ui-corner-top ' +
 					'ui-tabs-selected ' +
 					'ui-state-active ' +
-					'ui-tabs-deselectable ' +
+					'ui-state-hover ' +
+					'ui-tabs-collapsible ' +
 					'ui-state-disabled ' +
 					'ui-tabs-panel ' +
 					'ui-widget-content ' +
@@ -472,14 +480,13 @@ $.widget("ui.tabs", {
 	load: function(index, callback) { // callback is for internal usage only
 
 		var self = this, o = this.options, $a = this.$tabs.eq(index), a = $a[0],
-				bypassCache = callback == undefined || callback === false, url = $a.data('load.tabs');
-				// TODO bypassCache == false should work
+				bypassCache = callback == undefined, url = $a.data('load.tabs');
 
 		callback = callback || function() {};
 
 		// no remote or from cache - just finish with callback
 		// TODO in any case: insert cancel running load here..!
-		
+
 		if (!url || !bypassCache && $.data(a, 'cache.tabs')) {
 			callback();
 			return;
@@ -540,7 +547,7 @@ $.widget("ui.tabs", {
 	url: function(index, url) {
 		this.$tabs.eq(index).removeData('cache.tabs').data('load.tabs', url);
 	},
-	
+
 	length: function() {
 		return this.$tabs.length;
 	}
@@ -554,7 +561,7 @@ $.extend($.ui.tabs, {
 		ajaxOptions: null,
 		cache: false,
 		cookie: null, // e.g. { expires: 7, path: '/', domain: 'jquery.com', secure: true }
-		deselectable: false,
+		collapsible: false,
 		disabled: [],
 		event: 'click',
 		fx: null, // e.g. { height: 'toggle', opacity: 'toggle', duration: 200 }
@@ -576,7 +583,7 @@ $.extend($.ui.tabs.prototype, {
 	rotation: null,
 	rotate: function(ms, continuing) {
 
-		var self = this, t = this.options.selected;
+		var self = this, o = this.options, t = o.selected;
 
 		function rotate() {
 			clearTimeout(self.rotation);
@@ -589,7 +596,7 @@ $.extend($.ui.tabs.prototype, {
 		// start rotation
 		if (ms) {
 			this.element.bind('tabsshow', rotate); // will not be attached twice
-			this.$tabs.bind(this.options.event + '.tabs', !continuing ?
+			this.$tabs.bind(o.event + '.tabs', !continuing ?
 				function(e) {
 					if (e.clientX) { // in case of a true click
 						clearTimeout(self.rotation);
@@ -597,7 +604,7 @@ $.extend($.ui.tabs.prototype, {
 					}
 				} :
 				function(e) {
-					t = self.options.selected;
+					t = o.selected;
 					rotate();
 				}
 			);
@@ -607,7 +614,7 @@ $.extend($.ui.tabs.prototype, {
 		else {
 			clearTimeout(self.rotation);
 			this.element.unbind('tabsshow', rotate);
-			this.$tabs.unbind(this.options.event + '.tabs', stop);
+			this.$tabs.unbind(o.event + '.tabs', stop);
 		}
 	}
 });

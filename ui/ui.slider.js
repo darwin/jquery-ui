@@ -77,7 +77,7 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 		this.handles.add(this.range).filter("a")
 			.click(function(event) { event.preventDefault(); })
 			.hover(function() { $(this).addClass('ui-state-hover'); }, function() { $(this).removeClass('ui-state-hover'); })
-			.focus(function() { self.handles.removeClass('ui-state-focus'); $(this).addClass('ui-state-focus'); })
+			.focus(function() { $(".ui-slider .ui-state-focus").removeClass('ui-state-focus'); $(this).addClass('ui-state-focus'); })
 			.blur(function() { $(this).removeClass('ui-state-focus'); });
 
 		this.handles.each(function(i) {
@@ -196,10 +196,11 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 				index = i;
 			}
 		});
-		
-		// workaround for bug #3736 (if both handles of a range are at 0, the first is always used as the one with least distance,
+
+		// workaround for bug #3736 (if both handles of a range are at 0,
+		// the first is always used as the one with least distance,
 		// and moving it is obviously prevented by preventing negative ranges)
-		if(o.range && (this.values(0) + this.values(1)) == 0) {
+		if(o.range == true && this.values(1) == o.min) {
 			closestHandle = $(this.handles[++index]);
 		}
 
@@ -213,7 +214,11 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 		var mouseOverHandle = !$(event.target).parents().andSelf().is('.ui-slider-handle');
 		this._clickOffset = mouseOverHandle ? { left: 0, top: 0 } : {
 			left: event.pageX - offset.left + (parseInt(closestHandle.css('marginLeft'),10) || 0),
-			top: event.pageY - offset.top + (parseInt(closestHandle.css('marginTop'),10) || 0)
+			top: event.pageY - offset.top
+				- (closestHandle.height() / 2)
+				- (parseInt(closestHandle.css('borderTopWidth'),10) || 0)
+				- (parseInt(closestHandle.css('borderBottomWidth'),10) || 0)
+				+ (parseInt(closestHandle.css('marginTop'),10) || 0)
 		};
 
 		normValue = this._normValueFromMouse(position);

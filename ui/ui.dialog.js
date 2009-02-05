@@ -210,6 +210,7 @@ $.widget("ui.dialog", {
 		this._size();
 		this._position(options.position);
 		uiDialog.show(options.show);
+		(options.shadow && this._createShadow());
 		this.moveToTop(true, event);
 
 		// prevent tabbing out of modal dialogs
@@ -243,9 +244,6 @@ $.widget("ui.dialog", {
 			.add(uiDialog.find('.ui-dialog-titlebar :tabbable:first'))
 			.filter(':first')
 			.focus();
-
-		if(options.shadow)
-			this._createShadow();
 
 		this._trigger('open', event);
 		this._isOpen = true;
@@ -306,16 +304,14 @@ $.widget("ui.dialog", {
 			containment: 'document',
 			start: function() {
 				(options.dragStart && options.dragStart.apply(self.element[0], arguments));
-				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.hide();
 			},
 			drag: function() {
 				(options.drag && options.drag.apply(self.element[0], arguments));
-				self._refreshShadow(1);
+				self._refreshShadow();
 			},
 			stop: function() {
 				(options.dragStop && options.dragStop.apply(self.element[0], arguments));
 				$.ui.dialog.overlay.resize();
-				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.show();
 				self._refreshShadow();
 			}
 		});
@@ -339,17 +335,15 @@ $.widget("ui.dialog", {
 			minHeight: options.minHeight,
 			start: function() {
 				(options.resizeStart && options.resizeStart.apply(self.element[0], arguments));
-				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.hide();
 			},
 			resize: function() {
 				(options.resize && options.resize.apply(self.element[0], arguments));
-				self._refreshShadow(1);
+				self._refreshShadow();
 			},
 			handles: resizeHandles,
 			stop: function() {
 				(options.resizeStop && options.resizeStop.apply(self.element[0], arguments));
 				$.ui.dialog.overlay.resize();
-				if($.browser.msie && $.browser.version < 7 && self.shadow) self.shadow.show();
 				self._refreshShadow();
 			}
 		})
@@ -440,7 +434,11 @@ $.widget("ui.dialog", {
 
 				// currently non-resizable, becoming resizable
 				(isResizable || this._makeResizable(value));
-
+				break;
+			case "shadow":
+				(value
+					? this.shadow || this._createShadow()
+					: this.shadow && this._destroyShadow());
 				break;
 			case "title":
 				$(".ui-dialog-title", this.uiDialogTitlebar).html(value || '&nbsp;');
@@ -489,17 +487,16 @@ $.widget("ui.dialog", {
 		return this.shadow;
 	},
 	
-	_refreshShadow: function(dragging) {
-		// IE6 is simply to slow to handle the reflow in a good way, so
-		// resizing only happens on stop, and the shadow is hidden during drag/resize
-		if(dragging && $.browser.msie && $.browser.version < 7) return;
+	_refreshShadow: function() {
+		if (!this.options.shadow) { return; }
 		
-		var offset = this.uiDialog.offset();
+		var uiDialog = this.uiDialog,
+			offset = uiDialog.offset();
 		this.shadow.css({
 			left: offset.left,
 			top: offset.top,
-			width: this.uiDialog.outerWidth(),
-			height: this.uiDialog.outerHeight()
+			width: uiDialog.outerWidth(),
+			height: uiDialog.outerHeight()
 		});
 	},
 	
@@ -507,7 +504,6 @@ $.widget("ui.dialog", {
 		this.shadow.remove();
 		this.shadow = null;
 	}
-	
 });
 
 $.extend($.ui.dialog, {
@@ -518,6 +514,7 @@ $.extend($.ui.dialog, {
 		buttons: {},
 		closeOnEscape: true,
 		closeText: 'close',
+		dialogClass: '',
 		draggable: true,
 		height: 'auto',
 		minHeight: 150,
@@ -525,7 +522,7 @@ $.extend($.ui.dialog, {
 		modal: false,
 		position: 'center',
 		resizable: true,
-		shadow: true,
+		shadow: false,
 		stack: true,
 		title: '',
 		width: 300,
