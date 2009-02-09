@@ -3,17 +3,16 @@
  */
 
 var resizable_defaults = {
+	alsoResize: false,
 	animate: false,
 	animateDuration: 'slow',
 	animateEasing: 'swing',
-	alsoResize: false,
 	aspectRatio: false,
 	autoHide: false,
 	cancel: ':input,option',
 	containment: false,
 	delay: 0,
 	disabled: false,
-	disableSelection: true,
 	distance: 1,
 	ghost: false,
 	grid: false,
@@ -27,7 +26,7 @@ var resizable_defaults = {
 	preventDefault: true,
 	proportionallyResize: false,
 	transparent: false,
-	zIndex: 1001
+	zIndex: 1000
 };
 
 commonWidgetTests('resizable', { defaults: resizable_defaults });

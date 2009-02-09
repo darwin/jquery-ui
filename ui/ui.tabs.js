@@ -21,8 +21,12 @@ $.widget("ui.tabs", {
 	},
 
 	_setData: function(key, value) {
-		if ((/^selected/).test(key))
+		if (key == 'selected') {
+			if (this.options.collapsible
+				&& value == this.options.selected) return;
+			
 			this.select(value);
+		}
 		else {
 			this.options[key] = value;
 			if (key == 'deselectable')
@@ -56,7 +60,7 @@ $.widget("ui.tabs", {
 
 	_tabify: function(init) {
 
-		this.list = this.element.is('div') ? this.element.children('ul:first, ol:first').eq(0) : this.element;
+		this.list = this.element.children('ul:first, ol:first').eq(0);
 		this.$lis = $('li:has(a[href])', this.list);
 		this.$tabs = this.$lis.map(function() { return $('a', this)[0]; });
 		this.$panels = $([]);
@@ -103,9 +107,7 @@ $.widget("ui.tabs", {
 		if (init) {
 
 			// attach necessary classes for styling
-			if (this.element.is('div')) {
-				this.element.addClass('ui-tabs ui-widget ui-widget-content ui-corner-all');
-			}
+			this.element.addClass('ui-tabs ui-widget ui-widget-content ui-corner-all');
 			this.list.addClass('ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all');
 			this.$lis.addClass('ui-state-default ui-corner-top');
 			this.$panels.addClass('ui-tabs-panel ui-widget-content ui-corner-bottom');
@@ -155,8 +157,7 @@ $.widget("ui.tabs", {
 			this.$lis.removeClass('ui-tabs-selected ui-state-active');
 			if (o.selected >= 0 && this.$tabs.length) { // check for length avoids error when initializing empty list
 				this.$panels.eq(o.selected).removeClass('ui-tabs-hide');
-				var classes = ['ui-tabs-selected ui-state-active'];
-				this.$lis.eq(o.selected).addClass(classes.join(' '));
+				this.$lis.eq(o.selected).addClass('ui-tabs-selected ui-state-active');
 
 				// seems to be expected behavior that the show callback is fired
 				var onShow = function() {
@@ -256,9 +257,9 @@ $.widget("ui.tabs", {
 
 		// Switch a tab...
 		function switchTab(clicked, $li, $hide, $show) {
-			var classes = ['ui-tabs-selected ui-state-active'];
-			$li.removeClass('ui-state-default').addClass(classes.join(' '))
-				.siblings().removeClass(classes.join(' ')).addClass('ui-state-default');
+			var classes = 'ui-tabs-selected ui-state-active';
+			$li.removeClass('ui-state-default').addClass(classes)
+				.siblings().removeClass(classes).addClass('ui-state-default');
 			hideTab(clicked, $hide, $show);
 		}
 
@@ -272,7 +273,7 @@ $.widget("ui.tabs", {
 			// or is already loading or click callback returns false stop here.
 			// Check if click handler returns false last so that it is not executed
 			// for a disabled or loading tab!
-			if (($li.hasClass('ui-state-active') && !o.collapsible)
+			if (($li.hasClass('ui-tabs-selected') && !o.collapsible)
 				|| $li.hasClass('ui-state-disabled')
 				|| $(this).hasClass('ui-tabs-loading')
 				|| self._trigger('select', null, self._ui(this, $show[0])) === false
@@ -285,7 +286,7 @@ $.widget("ui.tabs", {
 
 			// if tab may be closed TODO avoid redundant code in this block
 			if (o.collapsible) {
-				if ($li.hasClass('ui-state-active')) {
+				if ($li.hasClass('ui-tabs-selected')) {
 					o.selected = -1;
 					if (o.cookie) self._cookie(o.selected, o.cookie);
 					$li.removeClass('ui-tabs-selected ui-state-active')
@@ -311,7 +312,7 @@ $.widget("ui.tabs", {
 			if (o.cookie) self._cookie(o.selected, o.cookie);
 
 			// stop possibly running animations
-			self.$panels.stop();
+			self.$panels.stop(false, true);
 
 			// show new tab
 			if ($show.length) {
@@ -348,9 +349,7 @@ $.widget("ui.tabs", {
 			.removeClass('ui-tabs ui-widget ui-widget-content ui-corner-all')
 			.removeData('tabs');
 
-		this.list.unbind('.tabs')
-			.removeClass('ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all')
-			.removeData('tabs');
+		this.list.removeClass('ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all');
 
 		this.$tabs.each(function() {
 			var href = $.data(this, 'href.tabs');
@@ -474,19 +473,23 @@ $.widget("ui.tabs", {
 	select: function(index) {
 		if (typeof index == 'string')
 			index = this.$tabs.index(this.$tabs.filter('[href$=' + index + ']'));
+			
+		else if (index === null)
+			index = -1;
+
+		if (index == -1 && this.options.collapsible)
+			index = this.options.selected;
+			
 		this.$tabs.eq(index).trigger(this.options.event + '.tabs');
 	},
 
 	load: function(index, callback) { // callback is for internal usage only
-
+		callback = callback || function() {};
+		
 		var self = this, o = this.options, $a = this.$tabs.eq(index), a = $a[0],
 				bypassCache = callback == undefined, url = $a.data('load.tabs');
 
-		callback = callback || function() {};
-
-		// no remote or from cache - just finish with callback
-		// TODO in any case: insert cancel running load here..!
-
+		// not remote or from cache - just finish with callback
 		if (!url || !bypassCache && $.data(a, 'cache.tabs')) {
 			callback();
 			return;
