@@ -172,20 +172,6 @@ $.widget("ui.tabs", {
 				else onShow();
 			}
 
-			// states
-			if (o.event != 'mouseover') {
-				var handleState = function(state, el) {
-					if (el.is(':not(.ui-state-disabled)')) el.toggleClass('ui-state-' + state);
-				};
-				this.$lis.bind('mouseover.tabs mouseout.tabs', function() {
-					handleState('hover', $(this));
-				});
-				// TODO focus/blur don't seem to work with namespace
-				this.$tabs.bind('focus.tabs blur.tabs', function() {
-					handleState('focus', $(this).parents('li:first'));
-				});
-			}
-
 			// clean up to avoid memory leaks in certain versions of IE 6
 			$(window).bind('unload', function() {
 				self.$lis.add(self.$tabs).unbind('.tabs');
@@ -194,9 +180,10 @@ $.widget("ui.tabs", {
 
 		}
 		// update selected after add/remove
-		else
+		else {
 			o.selected = this.$lis.index(this.$lis.filter('.ui-tabs-selected'));
-
+		}
+		
 		// update collapsible
 		this.element[o.collapsible ? 'addClass' : 'removeClass']('ui-tabs-collapsible');
 		
@@ -210,6 +197,21 @@ $.widget("ui.tabs", {
 		// reset cache if switching from cached to not cached
 		if (o.cache === false) this.$tabs.removeData('cache.tabs');
 
+		// remove all handlers before, tabify may run on existing tabs after add or option change
+		this.$lis.add(this.$tabs).unbind('.tabs');
+		
+		if (o.event != 'mouseover') {
+			var handleState = function(state, el) {
+				if (el.is(':not(.ui-state-disabled)')) el.toggleClass('ui-state-' + state);
+			};
+			this.$lis.bind('mouseover.tabs mouseout.tabs', function() {
+				handleState('hover', $(this));
+			});
+			this.$tabs.bind('focus.tabs blur.tabs', function() {
+				handleState('focus', $(this).closest('li'));
+			});
+		}
+		
 		// set up animations
 		var hideFx, showFx;
 		if (o.fx) {
@@ -264,10 +266,9 @@ $.widget("ui.tabs", {
 		}
 
 		// attach tab event handler, unbind to avoid duplicates from former tabifying...
-		this.$tabs.unbind('.tabs').bind(o.event + '.tabs', function() {
-			var $li = $(this).parents('li:eq(0)'),
-				$hide = self.$panels.filter(':visible'),
-				$show = $(self._sanitizeSelector(this.hash));
+		this.$tabs.bind(o.event + '.tabs', function() {
+			var $li = $(this).closest('li'), $hide = self.$panels.filter(':visible'),
+					$show = $(self._sanitizeSelector(this.hash));
 
 			// If tab is already selected and not collapsible or tab disabled or
 			// or is already loading or click callback returns false stop here.
@@ -409,7 +410,7 @@ $.widget("ui.tabs", {
 		}
 
 		o.disabled = $.map(o.disabled,
-			function(n, i) { return n >= index ? ++n : n });
+			function(n, i) { return n >= index ? ++n : n; });
 
 		this._tabify();
 
@@ -437,7 +438,7 @@ $.widget("ui.tabs", {
 			this.select(index + (index + 1 < this.$tabs.length ? 1 : -1));
 
 		o.disabled = $.map($.grep(o.disabled, function(n, i) { return n != index; }),
-			function(n, i) { return n >= index ? --n : n });
+			function(n, i) { return n >= index ? --n : n; });
 
 		this._tabify();
 

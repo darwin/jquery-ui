@@ -230,14 +230,12 @@ $.widget("ui.dialog", {
 			}
 		}));
 
-		// set focus to the first tabbable element in:
-		// - content area
-		// - button pane
-		// - title bar
+		// set focus to the first tabbable element in the content area or the first button
+		// if there are no tabbable elements, set focus on the dialog itself
 		$([])
 			.add(uiDialog.find('.ui-dialog-content :tabbable:first'))
 			.add(uiDialog.find('.ui-dialog-buttonpane :tabbable:first'))
-			.add(uiDialog.find('.ui-dialog-titlebar :tabbable:first'))
+			.add(uiDialog)
 			.filter(':first')
 			.focus();
 
@@ -484,12 +482,16 @@ $.extend($.ui.dialog, {
 		closeText: 'close',
 		dialogClass: '',
 		draggable: true,
+		hide: null,
 		height: 'auto',
+		maxHeight: false,
+		maxWidth: false,
 		minHeight: 150,
 		minWidth: 150,
 		modal: false,
 		position: 'center',
 		resizable: true,
+		show: null,
 		stack: true,
 		title: '',
 		width: 300,

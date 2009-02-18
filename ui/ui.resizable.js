@@ -57,7 +57,8 @@ $.widget("ui.resizable", $.extend({}, $.ui.mouse, {
 			this.originalElement.css({ marginLeft: 0, marginTop: 0, marginRight: 0, marginBottom: 0});
 
 			//Prevent Safari textarea resize
-			if ($.browser.safari && o.preventDefault) this.originalElement.css('resize', 'none');
+			this.originalResizeStyle = this.originalElement.css('resize');
+			this.originalElement.css('resize', 'none');
 
 			//Push the actual element to our proportionallyResize internal array
 			this._proportionallyResizeElements.push(this.originalElement.css({ position: 'static', zoom: 1, display: 'block' }));
@@ -183,17 +184,19 @@ $.widget("ui.resizable", $.extend({}, $.ui.mouse, {
 		//TODO: Unwrap at same DOM position
 		if (this.elementIsWrapper) {
 			_destroy(this.element);
-			this.wrapper.parent().append(
+			var wrapper = this.element;
+			wrapper.parent().append(
 				this.originalElement.css({
-					position: this.wrapper.css('position'),
-					width: this.wrapper.outerWidth(),
-					height: this.wrapper.outerHeight(),
-					top: this.wrapper.css('top'),
-					left: this.wrapper.css('left')
+					position: wrapper.css('position'),
+					width: wrapper.outerWidth(),
+					height: wrapper.outerHeight(),
+					top: wrapper.css('top'),
+					left: wrapper.css('left')
 				})
 			).end().remove();
 		}
 
+		this.originalElement.css('resize', this.originalResizeStyle);
 		_destroy(this.originalElement);
 
 	},
@@ -322,10 +325,10 @@ $.widget("ui.resizable", $.extend({}, $.ui.mouse, {
 	_updateCache: function(data) {
 		var o = this.options;
 		this.offset = this.helper.offset();
-		if (data.left) this.position.left = data.left;
-		if (data.top) this.position.top = data.top;
-		if (data.height) this.size.height = data.height;
-		if (data.width) this.size.width = data.width;
+		if (isNumber(data.left)) this.position.left = data.left;
+		if (isNumber(data.top)) this.position.top = data.top;
+		if (isNumber(data.height)) this.size.height = data.height;
+		if (isNumber(data.width)) this.size.width = data.width;
 	},
 
 	_updateRatio: function(data, event) {
@@ -348,10 +351,6 @@ $.widget("ui.resizable", $.extend({}, $.ui.mouse, {
 	},
 
 	_respectSize: function(data, event) {
-
-		var isNumber = function(value) {
-			return !isNaN(parseInt(value, 10))
-		};
 
 		var el = this.helper, o = this.options, pRatio = this._aspectRatio || event.shiftKey, a = this.axis,
 				ismaxw = isNumber(data.width) && o.maxWidth && (o.maxWidth < data.width), ismaxh = isNumber(data.height) && o.maxHeight && (o.maxHeight < data.height),
@@ -514,7 +513,6 @@ $.extend($.ui.resizable, {
 		maxWidth: null,
 		minHeight: 10,
 		minWidth: 10,
-		preventDefault: true,
 		zIndex: 1000
 	}
 });
@@ -779,6 +777,10 @@ $.ui.plugin.add("resizable", "grid", {
 
 var num = function(v) {
 	return parseInt(v, 10) || 0;
+};
+
+var isNumber = function(value) {
+	return !isNaN(parseInt(value, 10));
 };
 
 })(jQuery);
