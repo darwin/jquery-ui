@@ -1,7 +1,7 @@
 /*
  * jQuery UI Dialog @VERSION
  *
- * Copyright (c) 2009 AUTHORS.txt (http://ui.jquery.com/about)
+ * Copyright (c) 2009 AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *
@@ -64,7 +64,7 @@ $.widget("ui.dialog", {
 					'aria-labelledby': titleId
 				})
 				.mousedown(function(event) {
-					self.moveToTop(event);
+					self.moveToTop(false, event);
 				}),
 
 			uiDialogContent = this.element
@@ -167,7 +167,7 @@ $.widget("ui.dialog", {
 			? self.uiDialog.hide(self.options.hide, function() {
 				self._trigger('close', event);
 			})
-			: self._trigger('close', event));
+			: self.uiDialog.hide() && self._trigger('close', event));
 
 		$.ui.dialog.overlay.resize();
 
@@ -200,7 +200,7 @@ $.widget("ui.dialog", {
 		this._trigger('focus', event);
 	},
 
-	open: function(event) {
+	open: function() {
 		if (this._isOpen) { return; }
 
 		var options = this.options,
@@ -211,7 +211,7 @@ $.widget("ui.dialog", {
 		this._size();
 		this._position(options.position);
 		uiDialog.show(options.show);
-		this.moveToTop(true, event);
+		this.moveToTop(true);
 
 		// prevent tabbing out of modal dialogs
 		(options.modal && uiDialog.bind('keypress.ui-dialog', function(event) {
@@ -243,7 +243,7 @@ $.widget("ui.dialog", {
 			.filter(':first')
 			.focus();
 
-		this._trigger('open', event);
+		this._trigger('open');
 		this._isOpen = true;
 	},
 
@@ -293,20 +293,23 @@ $.widget("ui.dialog", {
 
 	_makeDraggable: function() {
 		var self = this,
-			options = this.options;
+			options = this.options,
+			heightBeforeDrag;
 
 		this.uiDialog.draggable({
 			cancel: '.ui-dialog-content',
-			helper: options.dragHelper,
 			handle: '.ui-dialog-titlebar',
 			containment: 'document',
 			start: function() {
+				heightBeforeDrag = options.height;
+				$(this).height($(this).height()).addClass("ui-dialog-dragging");
 				(options.dragStart && options.dragStart.apply(self.element[0], arguments));
 			},
 			drag: function() {
 				(options.drag && options.drag.apply(self.element[0], arguments));
 			},
 			stop: function() {
+				$(this).removeClass("ui-dialog-dragging").height(heightBeforeDrag);
 				(options.dragStop && options.dragStop.apply(self.element[0], arguments));
 				$.ui.dialog.overlay.resize();
 			}
@@ -324,12 +327,12 @@ $.widget("ui.dialog", {
 		this.uiDialog.resizable({
 			cancel: '.ui-dialog-content',
 			alsoResize: this.element,
-			helper: options.resizeHelper,
 			maxWidth: options.maxWidth,
 			maxHeight: options.maxHeight,
 			minWidth: options.minWidth,
 			minHeight: options.minHeight,
 			start: function() {
+				$(this).addClass("ui-dialog-resizing");
 				(options.resizeStart && options.resizeStart.apply(self.element[0], arguments));
 			},
 			resize: function() {
@@ -337,6 +340,9 @@ $.widget("ui.dialog", {
 			},
 			handles: resizeHandles,
 			stop: function() {
+				$(this).removeClass("ui-dialog-resizing");
+				options.height = $(this).height();
+				options.width = $(this).width();
 				(options.resizeStop && options.resizeStop.apply(self.element[0], arguments));
 				$.ui.dialog.overlay.resize();
 			}

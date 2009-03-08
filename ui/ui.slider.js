@@ -1,7 +1,7 @@
 /*
  * jQuery UI Slider @VERSION
  *
- * Copyright (c) 2009 AUTHORS.txt (http://ui.jquery.com/about)
+ * Copyright (c) 2009 AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *
@@ -222,7 +222,7 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 		var offset = closestHandle.offset();
 		var mouseOverHandle = !$(event.target).parents().andSelf().is('.ui-slider-handle');
 		this._clickOffset = mouseOverHandle ? { left: 0, top: 0 } : {
-			left: event.pageX - offset.left + (parseInt(closestHandle.css('marginLeft'),10) || 0),
+			left: event.pageX - offset.left - (closestHandle.width() / 2),
 			top: event.pageY - offset.top
 				- (closestHandle.height() / 2)
 				- (parseInt(closestHandle.css('borderTopWidth'),10) || 0)

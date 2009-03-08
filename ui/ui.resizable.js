@@ -1,7 +1,7 @@
 /*
  * jQuery UI Resizable @VERSION
  *
- * Copyright (c) 2009 AUTHORS.txt (http://ui.jquery.com/about)
+ * Copyright (c) 2009 AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *
@@ -177,7 +177,7 @@ $.widget("ui.resizable", $.extend({}, $.ui.mouse, {
 		this._mouseDestroy();
 
 		var _destroy = function(exp) {
-			$(exp).removeClass("ui-resizable ui-resizable-disabled")
+			$(exp).removeClass("ui-resizable ui-resizable-disabled ui-resizable-resizing")
 				.removeData("resizable").unbind(".resizable").find('.ui-resizable-handle').remove();
 		};
 
@@ -252,6 +252,7 @@ $.widget("ui.resizable", $.extend({}, $.ui.mouse, {
 	    var cursor = $('.ui-resizable-' + this.axis).css('cursor');
 	    $('body').css('cursor', cursor == 'auto' ? this.axis + '-resize' : cursor);
 
+		el.addClass("ui-resizable-resizing");
 		this._propagate("start", event);
 		return true;
 	},
@@ -310,10 +311,15 @@ $.widget("ui.resizable", $.extend({}, $.ui.mouse, {
 			if (!o.animate)
 				this.element.css($.extend(s, { top: top, left: left }));
 
+			self.helper.height(self.size.height);
+			self.helper.width(self.size.width);
+
 			if (this._helper && !o.animate) this._proportionallyResize();
 		}
 
 		$('body').css('cursor', 'auto');
+
+		this.element.removeClass("ui-resizable-resizing");
 
 		this._propagate("stop", event);
 
@@ -686,6 +692,9 @@ $.ui.plugin.add("resizable", "containment", {
 			if (pRatio) self.size.width = self.size.height * o.aspectRatio;
 			self.position.top = self._helper ? co.top : 0;
 		}
+
+		self.offset.left = self.parentData.left+self.position.left;
+		self.offset.top = self.parentData.top+self.position.top;
 
 		var woset = Math.abs( (self._helper ? self.offset.left - cop.left : (self.offset.left - cop.left)) + self.sizeDiff.width ),
 					hoset = Math.abs( (self._helper ? self.offset.top - cop.top : (self.offset.top - co.top)) + self.sizeDiff.height );

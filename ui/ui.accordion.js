@@ -1,7 +1,7 @@
 /*
  * jQuery UI Accordion @VERSION
  *
- * Copyright (c) 2009 AUTHORS.txt (http://ui.jquery.com/about)
+ * Copyright (c) 2009 AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *
@@ -354,7 +354,7 @@ $.widget("ui.accordion", {
 
 		}
 
-		toHide.prev().attr('aria-expanded','false').attr("tabIndex", "-1");
+		toHide.prev().attr('aria-expanded','false').attr("tabIndex", "-1").blur();
 		toShow.prev().attr('aria-expanded','true').attr("tabIndex", "0").focus();
 
 	},
