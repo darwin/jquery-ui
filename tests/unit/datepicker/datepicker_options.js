@@ -18,6 +18,7 @@ test('setDefaults', function() {
 test('option', function() {
 	var inp = init('#inp');
 	var inst = $.data(inp[0], PROP_NAME);
+	// Set option
 	equals(inst.settings.showOn, null, 'Initial setting showOn');
 	equals($.datepicker._get(inst, 'showOn'), 'focus', 'Initial instance showOn');
 	equals($.datepicker._defaults.showOn, 'focus', 'Initial default showOn');
@@ -33,6 +34,16 @@ test('option', function() {
 	equals(inst.settings.showOn, null, 'Clear setting showOn');
 	equals($.datepicker._get(inst, 'showOn'), 'focus', 'Restore instance showOn');
 	equals($.datepicker._defaults.showOn, 'focus', 'Retain default showOn');
+	// Get option
+	inp = init('#inp');
+	equals(inp.datepicker('option', 'showOn'), 'focus', 'Initial setting showOn');
+	inp.datepicker('option', 'showOn', 'button');
+	equals(inp.datepicker('option', 'showOn'), 'button', 'Change instance showOn');
+	inp.datepicker('option', 'showOn', undefined);
+	equals(inp.datepicker('option', 'showOn'), 'focus', 'Reset instance showOn');
+	same(inp.datepicker('option', 'all'), {duration: ''}, 'Get instance settings');
+	same(inp.datepicker('option', 'defaults'), $.datepicker._defaults,
+		'Get default settings');
 });
 
 test('change', function() {
@@ -176,13 +187,12 @@ test('defaultDate', function() {
 	inp.datepicker('option', {defaultDate: ' -1 m '}).
 		datepicker('hide').val('').datepicker('show').
 		simulate('keydown', {keyCode: $.simulate.VK_ENTER});
-	date = new Date();
-	date.setMonth(date.getMonth() - 1);
+	date = addMonths(new Date(), -1);
 	equalsDate(inp.datepicker('getDate'), date, 'Default date -1 m');
 	inp.datepicker('option', {defaultDate: '+2M'}).
 		datepicker('hide').val('').datepicker('show').
 		simulate('keydown', {keyCode: $.simulate.VK_ENTER});
-	date.setMonth(date.getMonth() + 3);
+	date = addMonths(new Date(), 2);
 	equalsDate(inp.datepicker('getDate'), date, 'Default date +2M');
 	inp.datepicker('option', {defaultDate: '-2y'}).
 		datepicker('hide').val('').datepicker('show').
@@ -198,8 +208,7 @@ test('defaultDate', function() {
 	inp.datepicker('option', {defaultDate: '+1M +10d'}).
 		datepicker('hide').val('').datepicker('show').
 		simulate('keydown', {keyCode: $.simulate.VK_ENTER});
-	date = new Date();
-	date.setMonth(date.getMonth() + 1);
+	date = addMonths(new Date(), 1);
 	date.setDate(date.getDate() + 10);
 	equalsDate(inp.datepicker('getDate'), date, 'Default date +1M +10d');
 	date = new Date(2007, 1 - 1, 26);
@@ -234,7 +243,8 @@ test('miscellaneous', function() {
 	equals(dp.find('.ui-datepicker-prev').text(), 'Prev', 'Navigation prev - default');
 	equals(dp.find('.ui-datepicker-current').text(), 'Today', 'Navigation current - default');
 	equals(dp.find('.ui-datepicker-next').text(), 'Next', 'Navigation next - default');
-	inp.datepicker('hide').datepicker('option', {navigationAsDateFormat: true, prevText: '< M', currentText: 'MM', nextText: 'M >'}).val('02/04/2008').datepicker('show');
+	inp.datepicker('hide').datepicker('option', {navigationAsDateFormat: true, prevText: '< M', currentText: 'MM', nextText: 'M >'}).
+		val('02/04/2008').datepicker('show');
 	var longNames = $.datepicker.regional[''].monthNames;
 	var shortNames = $.datepicker.regional[''].monthNamesShort;
 	var date = new Date();
@@ -318,8 +328,7 @@ test('minMax', function() {
 		simulate('keydown', {keyCode: $.simulate.VK_ENTER});
 	equalsDate(inp.datepicker('getDate'), date,
 		'Min/max - -1w, +1 M +10 D - ctrl+pgup');
-	date = new Date();
-	date.setMonth(date.getMonth() + 1);
+	date = addMonths(new Date(), 1);
 	date.setDate(date.getDate() + 10);
 	inp.val('').datepicker('show');
 	inp.simulate('keydown', {ctrlKey: true, keyCode: $.simulate.VK_PGDN}).
@@ -648,6 +657,10 @@ test('parseDate', function() {
 		new Date(2051, 2 - 1, 3), 'Parse date y-m-d - cutoff 80');
 	equalsDate($.datepicker.parseDate('y-m-d', '51-02-03', {shortYearCutoff: '+60'}),
 		new Date(2051, 2 - 1, 3), 'Parse date y-m-d - cutoff +60');
+	var gmtDate = new Date(2001, 2 - 1, 3);
+	gmtDate.setMinutes(gmtDate.getMinutes() - gmtDate.getTimezoneOffset());
+	equalsDate($.datepicker.parseDate('@', '981158400000'), gmtDate, 'Parse date @');
+	equalsDate($.datepicker.parseDate('!', '631167552000000000'), gmtDate, 'Parse date !');
 	var fr = $.datepicker.regional['fr'];
 	var settings = {dayNamesShort: fr.dayNamesShort, dayNames: fr.dayNames,
 		monthNamesShort: fr.monthNamesShort, monthNames: fr.monthNames};
@@ -736,6 +749,10 @@ test('formatDate', function() {
 	equals($.datepicker.formatDate('\'day\' d \'of\' MM (\'\'DD\'\'), yy',
 		new Date(2001, 2 - 1, 3)), 'day 3 of February (\'Saturday\'), 2001',
 		'Format date \'day\' d \'of\' MM (\'\'DD\'\'), yy');
+	var gmtDate = new Date(2001, 2 - 1, 3);
+	gmtDate.setMinutes(gmtDate.getMinutes() - gmtDate.getTimezoneOffset());
+	equals($.datepicker.formatDate('@', gmtDate), '981158400000', 'Format date @');
+	equals($.datepicker.formatDate('!', gmtDate), '631167552000000000', 'Format date !');
 	var fr = $.datepicker.regional['fr'];
 	var settings = {dayNamesShort: fr.dayNamesShort, dayNames: fr.dayNames,
 		monthNamesShort: fr.monthNamesShort, monthNames: fr.monthNames};
