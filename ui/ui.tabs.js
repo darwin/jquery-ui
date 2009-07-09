@@ -262,7 +262,7 @@ $.widget("ui.tabs", {
 		// and prevent IE's ClearType bug...
 		function resetStyle($el, fx) {
 			$el.css({ display: '' });
-			if ($.browser.msie && fx.opacity) {
+			if (!$.support.opacity && fx.opacity) {
 				$el[0].style.removeAttribute('filter');
 			}
 		}
@@ -434,6 +434,8 @@ $.widget("ui.tabs", {
 		if (o.cookie) {
 			this._cookie(null, o.cookie);
 		}
+
+		return this;
 	},
 
 	add: function(url, label, index) {
@@ -480,6 +482,7 @@ $.widget("ui.tabs", {
 
 		// callback
 		this._trigger('add', null, this._ui(this.anchors[index], this.panels[index]));
+		return this;
 	},
 
 	remove: function(index) {
@@ -499,6 +502,7 @@ $.widget("ui.tabs", {
 
 		// callback
 		this._trigger('remove', null, this._ui($li.find('a')[0], $panel[0]));
+		return this;
 	},
 
 	enable: function(index) {
@@ -512,6 +516,7 @@ $.widget("ui.tabs", {
 
 		// callback
 		this._trigger('enable', null, this._ui(this.anchors[index], this.panels[index]));
+		return this;
 	},
 
 	disable: function(index) {
@@ -525,6 +530,8 @@ $.widget("ui.tabs", {
 			// callback
 			this._trigger('disable', null, this._ui(this.anchors[index], this.panels[index]));
 		}
+
+		return this;
 	},
 
 	select: function(index) {
@@ -539,6 +546,7 @@ $.widget("ui.tabs", {
 		}
 
 		this.anchors.eq(index).trigger(this.options.event + '.tabs');
+		return this;
 	},
 
 	load: function(index) {
@@ -583,12 +591,18 @@ $.widget("ui.tabs", {
 				self.element.dequeue("tabs");
 			}
 		}));
+
+		return this;
 	},
 
 	abort: function() {
 		// stop possibly running animations
 		this.element.queue([]);
 		this.panels.stop(false, true);
+
+		// "tabs" queue must not contain more than two elements,
+		// which are the callbacks for the latest clicked tab...
+		this.element.queue("tabs", this.element.queue("tabs").splice(-2, 2));
 
 		// terminate pending requests from other tabs
 		if (this.xhr) {
@@ -598,11 +612,12 @@ $.widget("ui.tabs", {
 
 		// take care of tab labels
 		this._cleanup();
-
+		return this;
 	},
 
 	url: function(index, url) {
 		this.anchors.eq(index).removeData('cache.tabs').data('load.tabs', url);
+		return this;
 	},
 
 	length: function() {
@@ -613,17 +628,23 @@ $.widget("ui.tabs", {
 
 $.extend($.ui.tabs, {
 	version: '@VERSION',
-	getter: 'length',
 	defaults: {
+		add: null,
 		ajaxOptions: null,
 		cache: false,
 		cookie: null, // e.g. { expires: 7, path: '/', domain: 'jquery.com', secure: true }
 		collapsible: false,
+		disable: null,
 		disabled: [],
+		enable: null,
 		event: 'click',
 		fx: null, // e.g. { height: 'toggle', opacity: 'toggle', duration: 200 }
 		idPrefix: 'ui-tabs-',
+		load: null,
 		panelTemplate: '<div></div>',
+		remove: null,
+		select: null,
+		show: null,
 		spinner: '<em>Loading&#8230;</em>',
 		tabTemplate: '<li><a href="#{href}"><span>#{label}</span></a></li>'
 	}
@@ -679,6 +700,8 @@ $.extend($.ui.tabs.prototype, {
 			delete this._rotate;
 			delete this._unrotate;
 		}
+
+		return this;
 	}
 });
 

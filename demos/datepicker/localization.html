@@ -7,6 +7,7 @@
 	<script type="text/javascript" src="../../ui/ui.core.js"></script>
 	<script type="text/javascript" src="../../ui/ui.datepicker.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-ar.js"></script>
+	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-az.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-bg.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-ca.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-cs.js"></script>
@@ -15,9 +16,12 @@
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-el.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-eo.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-es.js"></script>
+	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-et.js"></script>
+	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-eu.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-fa.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-fi.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-fr.js"></script>
+	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-fr-CH.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-he.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-hr.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-hu.js"></script>
@@ -45,16 +49,16 @@
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-th.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-tr.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-uk.js"></script>
+	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-vi.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-zh-CN.js"></script>
 	<script type="text/javascript" src="../../ui/i18n/ui.datepicker-zh-TW.js"></script>
 	<link type="text/css" href="../demos.css" rel="stylesheet" />
 	<script type="text/javascript">
 	$(function() {
-		$.datepicker.setDefaults($.extend({showMonthAfterYear: false}, $.datepicker.regional['']));
+		$.datepicker.setDefaults($.datepicker.regional['']);
 		$("#datepicker").datepicker($.datepicker.regional['fr']);
 		$("#locale").change(function() {
-			$('#datepicker').datepicker('option', $.extend({showMonthAfterYear: false},
-				$.datepicker.regional[$(this).val()]));
+			$('#datepicker').datepicker('option', $.datepicker.regional[$(this).val()]);
 		});
 	});
 	</script>
@@ -68,6 +72,8 @@
 		<option value="sq">Albanian (Gjuha shqipe)</option>
 		<option value="ar">Arabic (&#8235;(&#1604;&#1593;&#1585;&#1576;&#1610;</option>
 		<option value="hy">Armenian (&#1344;&#1377;&#1397;&#1381;&#1408;&#1381;&#1398;)</option>
+		<option value="az">Azerbaijani (Az&#601;rbaycan dili)</option>
+		<option value="eu">Basque (Euskara)</option>
 		<option value="bg">Bulgarian (&#1073;&#1098;&#1083;&#1075;&#1072;&#1088;&#1089;&#1082;&#1080; &#1077;&#1079;&#1080;&#1082;)</option>
 		<option value="ca">Catalan (Catal&agrave;)</option>
 		<option value="zh-CN">Chinese Simplified (&#31616;&#20307;&#20013;&#25991;)</option>
@@ -77,9 +83,11 @@
 		<option value="da">Danish (Dansk)</option>
 		<option value="nl">Dutch (Nederlands)</option>
 		<option value="eo">Esperanto</option>
+		<option value="et">Estonian (eesti keel)</option>
 		<option value="fa">Farsi/Persian (&#8235;(&#1601;&#1575;&#1585;&#1587;&#1740;</option>
 		<option value="fi">Finnish (suomi)</option>
 		<option value="fr" selected="selected">French (Fran&ccedil;ais)</option>
+		<option value="fr-CH">French/Swiss (Fran&ccedil;ais de Suisse)</option>
 		<option value="de">German (Deutsch)</option>
 		<option value="el">Greek (&#917;&#955;&#955;&#951;&#957;&#953;&#954;&#940;)</option>
 		<option value="he">Hebrew (&#8235;(&#1506;&#1489;&#1512;&#1497;&#1514;</option>
@@ -106,6 +114,7 @@
 		<option value="th">Thai (&#3616;&#3634;&#3625;&#3634;&#3652;&#3607;&#3618;)</option>
 		<option value="tr">Turkish (T&uuml;rk&ccedil;e)</option>
 		<option value="uk">Ukranian (&#1059;&#1082;&#1088;&#1072;&#1111;&#1085;&#1089;&#1100;&#1082;&#1072;)</option>
+		<option value="vi">Vietnamese (Ti&#7871;ng Vi&#7879;t)</option>
 	</select></p>
 
 </div><!-- End demo -->

@@ -192,6 +192,7 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 
 		this._mouseDestroy();
 
+		return this;
 	},
 
 	_mouseCapture: function(event) {
@@ -321,8 +322,8 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 			value: this.value()
 		};
 		if (this.options.values && this.options.values.length) {
-			uiHash.value = this.values(index)
-			uiHash.values = this.values()
+			uiHash.value = this.values(index);
+			uiHash.values = this.values();
 		}
 		this._trigger("start", event, uiHash);
 	},
@@ -335,8 +336,10 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 
 			var otherVal = this.values(index ? 0 : 1);
 
-			if ((index == 0 && newVal >= otherVal) || (index == 1 && newVal <= otherVal))
-				newVal = otherVal;
+			if ((this.options.values.length == 2 && this.options.range === true) && 
+				((index == 0 && newVal > otherVal) || (index == 1 && newVal < otherVal))){
+ 				newVal = otherVal;
+			}
 
 			if (newVal != this.values(index)) {
 				var newValues = this.values();
@@ -377,8 +380,8 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 			value: this.value()
 		};
 		if (this.options.values && this.options.values.length) {
-			uiHash.value = this.values(index)
-			uiHash.values = this.values()
+			uiHash.value = this.values(index);
+			uiHash.values = this.values();
 		}
 		this._trigger("stop", event, uiHash);
 	},
@@ -389,8 +392,8 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 			value: this.value()
 		};
 		if (this.options.values && this.options.values.length) {
-			uiHash.value = this.values(index)
-			uiHash.values = this.values()
+			uiHash.value = this.values(index);
+			uiHash.values = this.values();
 		}
 		this._trigger("change", event, uiHash);
 	},
@@ -536,12 +539,10 @@ $.widget("ui.slider", $.extend({}, $.ui.mouse, {
 }));
 
 $.extend($.ui.slider, {
-	getter: "value values",
 	version: "@VERSION",
 	eventPrefix: "slide",
-	defaults: {
+	defaults: $.extend({}, $.ui.mouse.defaults, {
 		animate: false,
-		delay: 0,
 		distance: 0,
 		max: 100,
 		min: 0,
@@ -550,7 +551,7 @@ $.extend($.ui.slider, {
 		step: 1,
 		value: 0,
 		values: null
-	}
+	})
 });
 
 })(jQuery);

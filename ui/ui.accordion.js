@@ -27,18 +27,6 @@ $.widget("ui.accordion", {
 			o.collapsible = !o.alwaysOpen;
 		}
 
-		if ( o.navigation ) {
-			var current = this.element.find("a").filter(o.navigationFilter);
-			if ( current.length ) {
-				if ( current.filter(o.header).length ) {
-					this.active = current;
-				} else {
-					this.active = current.parent().parent().prev();
-					current.addClass("ui-accordion-content-active");
-				}
-			}
-		}
-
 		this.element.addClass("ui-accordion ui-widget ui-helper-reset");
 		
 		// in lack of child-selectors in CSS we need to mark top-LIs in a UL-accordion for some IE-fix
@@ -56,12 +44,25 @@ $.widget("ui.accordion", {
 			.next()
 				.addClass("ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom");
 
+		if ( o.navigation ) {
+			var current = this.element.find("a").filter(o.navigationFilter);
+			if ( current.length ) {
+				var header = current.closest(".ui-accordion-header");
+				if ( header.length ) {
+					// anchor within header
+					this.active = header;
+				} else {
+					// anchor within content
+					this.active = current.closest(".ui-accordion-content").prev();
+				}
+			}
+		}
+
 		this.active = this._findActive(this.active || o.active).toggleClass("ui-state-default").toggleClass("ui-state-active").toggleClass("ui-corner-all").toggleClass("ui-corner-top");
 		this.active.next().addClass('ui-accordion-content-active');
 
 		//Append icon elements
-		$("<span/>").addClass("ui-icon " + o.icons.header).prependTo(this.headers);
-		this.active.find(".ui-icon").toggleClass(o.icons.header).toggleClass(o.icons.headerSelected);
+		this._createIcons();
 
 		// IE7-/Win - Extra vertical space in lists fixed
 		if ($.browser.msie) {
@@ -104,6 +105,20 @@ $.widget("ui.accordion", {
 		}
 
 	},
+	
+	_createIcons: function() {
+		var o = this.options;
+		if (o.icons) {
+			$("<span/>").addClass("ui-icon " + o.icons.header).prependTo(this.headers);
+			this.active.find(".ui-icon").toggleClass(o.icons.header).toggleClass(o.icons.headerSelected);
+			this.element.addClass("ui-accordion-icons");
+		}
+	},
+	
+	_destroyIcons: function() {
+		this.headers.children(".ui-icon").remove();
+		this.element.removeClass("ui-accordion-icons");
+	},
 
 	destroy: function() {
 		var o = this.options;
@@ -120,16 +135,28 @@ $.widget("ui.accordion", {
 			.removeAttr("role").removeAttr("aria-expanded").removeAttr("tabindex");
 
 		this.headers.find("a").removeAttr("tabindex");
-		this.headers.children(".ui-icon").remove();
+		this._destroyIcons();
 		var contents = this.headers.next().css("display", "").removeAttr("role").removeClass("ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion-content ui-accordion-content-active");
 		if (o.autoHeight || o.fillHeight) {
 			contents.css("height", "");
 		}
+
+		return this;
 	},
 	
 	_setData: function(key, value) {
-		if(key == 'alwaysOpen') { key = 'collapsible'; value = !value; }
-		$.widget.prototype._setData.apply(this, arguments);	
+		// alwaysOpen is deprecated
+		if(key == 'alwaysOpen'){ key = 'collapsible'; value = !value; }
+		
+		$.widget.prototype._setData.apply(this, arguments);
+			
+		if (key == "icons") {
+			this._destroyIcons();
+			if (value) {
+				this._createIcons();
+			}
+		}
+		
 	},
 
 	_keydown: function(event) {
@@ -195,12 +222,15 @@ $.widget("ui.accordion", {
 			}).height(maxHeight);
 		}
 
+		return this;
 	},
 
 	activate: function(index) {
 		// call clickHandler with custom event
 		var active = this._findActive(index)[0];
 		this._clickHandler({ target: active }, active);
+
+		return this;
 	},
 
 	_findActive: function(selector) {
@@ -248,7 +278,7 @@ $.widget("ui.accordion", {
 		// switch classes
 		this.active.removeClass("ui-state-active ui-corner-top").addClass("ui-state-default ui-corner-all")
 			.find(".ui-icon").removeClass(o.icons.headerSelected).addClass(o.icons.header);
-		this.active.next().addClass('ui-accordion-content-active');
+		this.active.next().removeClass('ui-accordion-content-active');
 		if (!clickedIsActive) {
 			clicked.removeClass("ui-state-default ui-corner-all").addClass("ui-state-active ui-corner-top")
 				.find(".ui-icon").removeClass(o.icons.header).addClass(o.icons.headerSelected);
@@ -330,6 +360,9 @@ $.widget("ui.accordion", {
 				duration = o.duration,
 				easing = o.animated;
 
+			if (easing && !animations[easing] && !$.easing[easing]) {
+				easing = 'slide';
+			}
 			if (!animations[easing]) {
 				animations[easing] = function(options) {
 					this.slide(options, {
@@ -463,12 +496,6 @@ $.extend($.ui.accordion, {
 			this.slide(options, {
 				easing: options.down ? "easeOutBounce" : "swing",
 				duration: options.down ? 1000 : 200
-			});
-		},
-		easeslide: function(options) {
-			this.slide(options, {
-				easing: "easeinout",
-				duration: 700
 			});
 		}
 	}

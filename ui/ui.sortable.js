@@ -42,6 +42,8 @@ $.widget("ui.sortable", $.extend({}, $.ui.mouse, {
 
 		for ( var i = this.items.length - 1; i >= 0; i-- )
 			this.items[i].item.removeData("sortable-item");
+
+		return this;
 	},
 
 	_mouseCapture: function(event, overrideHandle) {
@@ -354,7 +356,7 @@ $.widget("ui.sortable", $.extend({}, $.ui.mouse, {
 			$(this.domPosition.parent).prepend(this.currentItem);
 		}
 
-		return true;
+		return this;
 
 	},
 
@@ -460,6 +462,7 @@ $.widget("ui.sortable", $.extend({}, $.ui.mouse, {
 	refresh: function(event) {
 		this._refreshItems(event);
 		this.refreshPositions();
+		return this;
 	},
 
 	_connectWith: function() {
@@ -567,10 +570,6 @@ $.widget("ui.sortable", $.extend({}, $.ui.mouse, {
 		for (var i = this.items.length - 1; i >= 0; i--){
 			var item = this.items[i];
 
-			//We ignore calculating positions of all connected containers when we're not over them
-			if(item.instance != this.currentContainer && this.currentContainer && item.item[0] != this.currentItem[0])
-				continue;
-
 			var t = this.options.toleranceElement ? $(this.options.toleranceElement, item.item) : item.item;
 
 			if (!fast) {
@@ -595,6 +594,7 @@ $.widget("ui.sortable", $.extend({}, $.ui.mouse, {
 			};
 		}
 
+		return this;
 	},
 
 	_createPlaceholder: function(that) {
@@ -984,19 +984,15 @@ $.widget("ui.sortable", $.extend({}, $.ui.mouse, {
 }));
 
 $.extend($.ui.sortable, {
-	getter: "serialize toArray",
 	version: "@VERSION",
 	eventPrefix: "sort",
-	defaults: {
+	defaults: $.extend({}, $.ui.mouse.defaults, {
 		appendTo: "parent",
 		axis: false,
-		cancel: ":input,option",
 		connectWith: false,
 		containment: false,
 		cursor: 'auto',
 		cursorAt: false,
-		delay: 0,
-		distance: 1,
 		dropOnEmpty: true,
 		forcePlaceholderSize: false,
 		forceHelperSize: false,
@@ -1013,7 +1009,7 @@ $.extend($.ui.sortable, {
 		scope: "default",
 		tolerance: "intersect",
 		zIndex: 1000
-	}
+	})
 });
 
 })(jQuery);

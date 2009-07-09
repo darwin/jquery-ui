@@ -59,6 +59,8 @@ $.widget("ui.selectable", $.extend({}, $.ui.mouse, {
 			.removeData("selectable")
 			.unbind(".selectable");
 		this._mouseDestroy();
+
+		return this;
 	},
 
 	_mouseStart: function(event) {
@@ -243,15 +245,13 @@ $.widget("ui.selectable", $.extend({}, $.ui.mouse, {
 
 $.extend($.ui.selectable, {
 	version: "@VERSION",
-	defaults: {
+	defaults: $.extend({}, $.ui.mouse.defaults, {
 		appendTo: 'body',
 		autoRefresh: true,
-		cancel: ":input,option",
-		delay: 0,
 		distance: 0,
 		filter: '*',
 		tolerance: 'touch'
-	}
+	})
 });
 
 })(jQuery);
